@@ -1,0 +1,99 @@
+name: release
+
+on:
+  push:
+    branches: ['develop', 'staging', 'main']
+
+permissions:
+  contents: write
+  issues: read
+  pull-requests: read
+  packages: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      REGISTRY: ghcr.io
+      IMAGE_NAME: ${{ github.repository }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 24 LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm run test:ci
+
+      - name: Semantic Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx semantic-release
+
+      - name: Read version from package.json
+        id: version
+        run: echo "VERSION=v$(node -p \"require('./package.json').version\")" >> $GITHUB_OUTPUT
+
+      - name: Normalize image name (lowercase)
+        id: imagename
+        run: echo "IMAGE_LC=${IMAGE_NAME,,}" >> $GITHUB_OUTPUT
+
+      - name: Set docker tags based on branch
+        id: tags
+        run: |
+          case "${GITHUB_REF_NAME}" in
+            develop)  CHANNEL_TAG=beta ;;
+            staging)  CHANNEL_TAG=rc ;;
+            main)     CHANNEL_TAG=latest ;;
+            *)        CHANNEL_TAG=dev ;;
+          esac
+          echo "CHANNEL_TAG=${CHANNEL_TAG}" >> $GITHUB_OUTPUT
+          echo "VERSION_TAG=${{ env.REGISTRY }}/${{ steps.imagename.outputs.IMAGE_LC }}:${{ steps.version.outputs.VERSION }}" >> $GITHUB_OUTPUT
+          echo "CHANNEL_REF=${{ env.REGISTRY }}/${{ steps.imagename.outputs.IMAGE_LC }}:${CHANNEL_TAG}" >> $GITHUB_OUTPUT
+          echo "SHA_TAG=${{ env.REGISTRY }}/${{ steps.imagename.outputs.IMAGE_LC }}:sha-${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Extract metadata (labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ steps.imagename.outputs.IMAGE_LC }}
+          tags: |
+            type=raw,value=${{ steps.tags.outputs.CHANNEL_TAG }}
+            type=raw,value=${{ steps.version.outputs.VERSION }}
+            type=sha,prefix=sha-
+
+      - name: Build and push (Node 24 image)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          # platforms: linux/amd64,linux/arm64   # <– descomenta si quieres multi-arch
+          tags: |
+            ${{ steps.tags.outputs.VERSION_TAG }}
+            ${{ steps.tags.outputs.CHANNEL_REF }}
+            ${{ steps.tags.outputs.SHA_TAG }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

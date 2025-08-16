@@ -1,0 +1,11 @@
+# Config files (not part of TS project)
+.eslintrc.js
+commitlint.config.cjs
+jest.config.js
+
+# Build & deps
+dist/**
+node_modules/**
+
+# (Opcional, recomendable)
+coverage/**

@@ -1,0 +1,4 @@
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Run linters/formatters and related tests only on staged files (fast)
+npx --no-install lint-staged
