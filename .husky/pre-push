@@ -1,4 +1,2 @@
-. "$(dirname -- "$0")/_/husky.sh"
-
 # Run full test suite before pushing to ensure repo integrity
 npm run test:prepush

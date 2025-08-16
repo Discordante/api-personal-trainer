@@ -1,4 +1,2 @@
-. "$(dirname -- "$0")/_/husky.sh"
-
 # Validate commit message against Conventional Commits
 npx --no -- commitlint --edit "$1"
