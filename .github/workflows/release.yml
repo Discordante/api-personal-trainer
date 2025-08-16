@@ -4,12 +4,14 @@ on:
   push:
     branches: ['develop', 'staging', 'main']
 
+# Required for semantic-release (commit CHANGELOG/package.json) and GHCR push
 permissions:
   contents: write
   issues: read
   pull-requests: read
   packages: write
 
+# Prevent overlapping runs on the same ref
 concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: true
@@ -19,10 +21,12 @@ jobs:
     runs-on: ubuntu-latest
     env:
       REGISTRY: ghcr.io
-      IMAGE_NAME: ${{ github.repository }}
+      IMAGE_NAME: ${{ github.repository }} # e.g. Discordante/api-personal-trainer
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # semantic-release needs full history
 
       - name: Use Node.js 24 LTS
         uses: actions/setup-node@v4
@@ -41,16 +45,25 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npx semantic-release
 
+      # ---- Build & Push Docker Image to GHCR ----
+
       - name: Read version from package.json
         id: version
-        run: echo "VERSION=v$(node -p \"require('./package.json').version\")" >> $GITHUB_OUTPUT
+        shell: bash
+        run: |
+          VERSION="v$(node -pe 'require("./package.json").version')"
+          echo "VERSION=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Normalize image name (lowercase)
         id: imagename
-        run: echo "IMAGE_LC=${IMAGE_NAME,,}" >> $GITHUB_OUTPUT
+        shell: bash
+        run: |
+          IMAGE_LC="$(echo "${IMAGE_NAME}" | tr '[:upper:]' '[:lower:]')"
+          echo "IMAGE_LC=$IMAGE_LC" >> "$GITHUB_OUTPUT"
 
       - name: Set docker tags based on branch
         id: tags
+        shell: bash
         run: |
           case "${GITHUB_REF_NAME}" in
             develop)  CHANNEL_TAG=beta ;;
@@ -58,10 +71,13 @@ jobs:
             main)     CHANNEL_TAG=latest ;;
             *)        CHANNEL_TAG=dev ;;
           esac
-          echo "CHANNEL_TAG=${CHANNEL_TAG}" >> $GITHUB_OUTPUT
-          echo "VERSION_TAG=${{ env.REGISTRY }}/${{ steps.imagename.outputs.IMAGE_LC }}:${{ steps.version.outputs.VERSION }}" >> $GITHUB_OUTPUT
-          echo "CHANNEL_REF=${{ env.REGISTRY }}/${{ steps.imagename.outputs.IMAGE_LC }}:${CHANNEL_TAG}" >> $GITHUB_OUTPUT
-          echo "SHA_TAG=${{ env.REGISTRY }}/${{ steps.imagename.outputs.IMAGE_LC }}:sha-${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+
+          SHA_SHORT="$(echo "${GITHUB_SHA}" | cut -c1-7)"
+
+          echo "CHANNEL_TAG=${CHANNEL_TAG}" >> "$GITHUB_OUTPUT"
+          echo "VERSION_TAG=${REGISTRY}/${{ steps.imagename.outputs.IMAGE_LC }}:${{ steps.version.outputs.VERSION }}" >> "$GITHUB_OUTPUT"
+          echo "CHANNEL_REF=${REGISTRY}/${{ steps.imagename.outputs.IMAGE_LC }}:${CHANNEL_TAG}" >> "$GITHUB_OUTPUT"
+          echo "SHA_TAG=${REGISTRY}/${{ steps.imagename.outputs.IMAGE_LC }}:sha-${SHA_SHORT}" >> "$GITHUB_OUTPUT"
 
       - name: Log in to GHCR
         uses: docker/login-action@v3
@@ -89,7 +105,8 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          # platforms: linux/amd64,linux/arm64   # <– descomenta si quieres multi-arch
+          # Uncomment for multi-arch:
+          # platforms: linux/amd64,linux/arm64
           tags: |
             ${{ steps.tags.outputs.VERSION_TAG }}
             ${{ steps.tags.outputs.CHANNEL_REF }}
