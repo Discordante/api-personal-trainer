@@ -13,7 +13,6 @@
     "start:dev": "nest start --watch --env-file .env.development --no-shell",
     "start:staging": "nest start --env-file .env.staging --no-shell",
     "start:prod": "node --env-file=.env.production dist/main.js",
-    "postinstall": "prisma generate",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
