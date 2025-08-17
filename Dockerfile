@@ -14,7 +14,7 @@ COPY package*.json ./
 RUN npm ci --no-audit --no-fund
 COPY tsconfig*.json ./
 COPY prisma ./prisma
-RUN npx prisma generate
+RUN npx prisma generate                    
 COPY src ./src
 RUN npm run build
 
@@ -26,10 +26,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends openssl \
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV NODE_OPTIONS=--enable-source-maps
+
+# Copiamos deps de prod
+COPY --from=deps /app/node_modules ./node_modules
+
+# Copiamos SOLO lo necesario generado por Prisma en build
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/@prisma/client ./node_modules/@prisma/client
+
+# App
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/prisma ./prisma
+COPY package*.json ./
+
 USER node
-COPY --from=deps --chown=node:node /app/node_modules ./node_modules
-COPY --from=builder --chown=node:node /app/dist ./dist
-COPY --from=builder --chown=node:node /app/prisma ./prisma
-COPY --chown=node:node package*.json ./
 EXPOSE 3000
 CMD ["node", "dist/main.js"]
