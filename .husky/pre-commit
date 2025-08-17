@@ -1,2 +1,2 @@
-# Run linters/formatters and related tests only on staged files (fast)
-npx --no-install lint-staged
+# Run linters/formatters only on staged files (no interactive, no install)
+npx --no-install lint-staged --quiet || exit 1
