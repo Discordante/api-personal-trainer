@@ -1,3 +1,10 @@
+# [1.0.0-beta.5](https://github.com/Discordante/api-personal-trainer/compare/v1.0.0-beta.4...v1.0.0-beta.5) (2025-08-17)
+
+
+### Features
+
+* update dockerfile ([3f3dcd0](https://github.com/Discordante/api-personal-trainer/commit/3f3dcd0560e094a7b2f8c3014770dc9791ac45ab))
+
 # [1.0.0-beta.4](https://github.com/Discordante/api-personal-trainer/compare/v1.0.0-beta.3...v1.0.0-beta.4) (2025-08-17)
 
 
