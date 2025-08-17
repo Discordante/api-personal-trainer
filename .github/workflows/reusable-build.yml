@@ -1,4 +1,5 @@
 name: reusable-build
+
 on:
   workflow_call:
     inputs:
@@ -55,11 +56,11 @@ jobs:
 
           SHA_SHORT="$(echo "${GITHUB_SHA}" | cut -c1-7)"
 
-          echo "image=${IMAGE}"                               >> "$GITHUB_OUTPUT"
-          echo "channel=${CHANNEL}"                           >> "$GITHUB_OUTPUT"
-          echo "tag_channel=${IMAGE}:${CHANNEL}"              >> "$GITHUB_OUTPUT"
-          echo "tag_version=${IMAGE}:${{ inputs.version }}"   >> "$GITHUB_OUTPUT"
-          echo "tag_sha=${IMAGE}:sha-${SHA_SHORT}"            >> "$GITHUB_OUTPUT"
+          echo "image=${IMAGE}"                             >> "$GITHUB_OUTPUT"
+          echo "channel=${CHANNEL}"                         >> "$GITHUB_OUTPUT"
+          echo "tag_channel=${IMAGE}:${CHANNEL}"            >> "$GITHUB_OUTPUT"
+          echo "tag_version=${IMAGE}:${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+          echo "tag_sha=${IMAGE}:sha-${SHA_SHORT}"          >> "$GITHUBOUTPUT"
 
       - id: meta
         uses: docker/metadata-action@v5

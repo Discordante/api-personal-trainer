@@ -1,4 +1,5 @@
 name: reusable-deploy-render
+
 on:
   workflow_call:
     inputs:
@@ -7,11 +8,17 @@ on:
         type: string
       released:
         required: true
-        type: string # 'true' | 'false'
+        type: boolean
+      environment_name:
+        required: true
+        type: string
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    # Bind job to the selected environment (secrets like RENDER_DEPLOY_HOOK live there)
+    environment:
+      name: ${{ inputs.environment_name }}
     steps:
       - name: Decide if should deploy
         id: gate
@@ -19,7 +26,11 @@ jobs:
         run: |
           BR="${{ inputs.branch }}"
           REL="${{ inputs.released }}"
-          if [ "$BR" = "develop" ] || { [ "$BR" = "main" ] && [ "$REL" = "true" ]; }; then
+          # Deploy rules:
+          # - develop  -> always
+          # - staging  -> always
+          # - main     -> only if released == true
+          if [ "$BR" = "develop" ] || [ "$BR" = "staging" ] || { [ "$BR" = "main" ] && [ "$REL" = "true" ]; }; then
             echo "go=true" >> "$GITHUB_OUTPUT"
           else
             echo "go=false" >> "$GITHUB_OUTPUT"
@@ -33,7 +44,6 @@ jobs:
 
       - name: Trigger Render deploy
         env:
-          # Provided by caller job via `environment: development`
           RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
         run: |
           for i in 1 2 3; do
