@@ -1,3 +1,11 @@
+# [1.0.0-beta.2](https://github.com/Discordante/api-personal-trainer/compare/v1.0.0-beta.1...v1.0.0-beta.2) (2025-08-17)
+
+
+### Features
+
+* **health:** add health check ([bc0fefb](https://github.com/Discordante/api-personal-trainer/commit/bc0fefb2d2ba345244b04b3a99294513cc4f2f68))
+* **swagger:** add swagger and env validation ([2ab2b28](https://github.com/Discordante/api-personal-trainer/commit/2ab2b2830c3136595e0fb40c7e64f5ab351deda0))
+
 # 1.0.0-beta.1 (2025-08-16)
 
 
