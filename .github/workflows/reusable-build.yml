@@ -60,7 +60,7 @@ jobs:
           echo "channel=${CHANNEL}"                         >> "$GITHUB_OUTPUT"
           echo "tag_channel=${IMAGE}:${CHANNEL}"            >> "$GITHUB_OUTPUT"
           echo "tag_version=${IMAGE}:${{ inputs.version }}" >> "$GITHUB_OUTPUT"
-          echo "tag_sha=${IMAGE}:sha-${SHA_SHORT}"          >> "$GITHUBOUTPUT"
+          echo "tag_sha=${IMAGE}:sha-${SHA_SHORT}"          >> "$GITHUB_OUTPUT"   # <- FIX
 
       - id: meta
         uses: docker/metadata-action@v5
