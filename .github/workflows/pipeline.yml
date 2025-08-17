@@ -41,6 +41,7 @@ jobs:
     uses: ./.github/workflows/reusable-deploy-render.yml
     with:
       branch: ${{ github.ref_name }}
-      released: ${{ fromJSON(needs.release.outputs.released) }} # convert "true"/"false" to boolean
+      # Safe default: if empty, evaluate to false
+      released: ${{ fromJSON(needs.release.outputs.released || 'false') }}
       environment_name: ${{ github.ref_name == 'main' && 'production' || github.ref_name == 'staging' && 'staging' || 'development' }}
     secrets: inherit

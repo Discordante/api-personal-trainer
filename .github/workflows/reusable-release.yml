@@ -10,6 +10,7 @@ on:
 
 jobs:
   release:
+    name: Compute version & tag
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.semver.outputs.version }}
@@ -31,8 +32,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           npx semantic-release --ci
+
           VERSION="v$(node -pe "require('./package.json').version")"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
           if git rev-parse -q --verify "refs/tags/$VERSION" >/dev/null; then
             echo "released=true" >> "$GITHUB_OUTPUT"
           else
