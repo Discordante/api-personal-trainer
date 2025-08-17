@@ -1,3 +1,10 @@
+# [1.0.0-beta.6](https://github.com/Discordante/api-personal-trainer/compare/v1.0.0-beta.5...v1.0.0-beta.6) (2025-08-17)
+
+
+### Features
+
+* **prisma:** update prisma service ([77b3a5b](https://github.com/Discordante/api-personal-trainer/commit/77b3a5bc560719ea14b736b01de8d1a28c8f5ced))
+
 # [1.0.0-beta.5](https://github.com/Discordante/api-personal-trainer/compare/v1.0.0-beta.4...v1.0.0-beta.5) (2025-08-17)
 
 
