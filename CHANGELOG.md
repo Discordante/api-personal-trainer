@@ -1,3 +1,10 @@
+# [1.0.0-beta.4](https://github.com/Discordante/api-personal-trainer/compare/v1.0.0-beta.3...v1.0.0-beta.4) (2025-08-17)
+
+
+### Features
+
+* **prisma:** add prisma generate into Dockerfile ([e8afc86](https://github.com/Discordante/api-personal-trainer/commit/e8afc86aa4ad60a31ad314dd8dcd160345c3f003))
+
 # [1.0.0-beta.3](https://github.com/Discordante/api-personal-trainer/compare/v1.0.0-beta.2...v1.0.0-beta.3) (2025-08-17)
 
 
