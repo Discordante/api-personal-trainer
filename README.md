@@ -1,73 +1,114 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
-</p>
+# Personal Trainer API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+API en **NestJS + Prisma**, empaquetada en **Docker (Debian slim)**, publicada en **GHCR** y desplegada en **Render** mediante **GitHub Actions**.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+---
 
-## Description
+## Stack
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+- **Node.js 24 (Debian slim)**
+- **NestJS + Prisma + Postgres**
+- **Docker multi-stage** (build, deps, runtime no-root)
+- **CI/CD con GitHub Actions**
+- **Despliegue automático en Render**
 
-## Installation
+---
 
-```bash
-$ npm install
+## Entornos
+
+| Entorno     | Rama      | Deploy automático | Condición                                  | Secret en GitHub                          |
+| ----------- | --------- | ----------------- | ------------------------------------------ | ----------------------------------------- |
+| **dev**     | `develop` | ✅                | Siempre                                    | `RENDER_DEPLOY_HOOK` (env: `development`) |
+| **staging** | `staging` | ✅                | Siempre                                    | `RENDER_DEPLOY_HOOK` (env: `staging`)     |
+| **prod**    | `main`    | ✅                | Solo si `semantic-release` publica versión | `RENDER_DEPLOY_HOOK` (env: `production`)  |
+
+---
+
+## Dockerfile
+
+```dockerfile
+FROM node:24-slim AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --omit=dev --no-audit --no-fund
+COPY prisma ./prisma && npx prisma generate
+COPY tsconfig*.json ./ && COPY src ./src
+RUN npm run build
+
+FROM node:24-slim AS runner
+WORKDIR /app
+ENV NODE_ENV=production PORT=3000 NODE_OPTIONS=--enable-source-maps
+USER node
+COPY --from=builder --chown=node:node /app ./
+EXPOSE 3000
+CMD ["node", "dist/main.js"]
 ```
 
-## Running the app
+`.dockerignore` incluye: `node_modules`, `dist`, `.git`, `.env`, `coverage`, etc.
+
+### Migraciones en Render
+
+En **Pre-Deploy Command** de Render:
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+npx prisma migrate deploy
 ```
 
-## Test
+---
+
+## CI/CD (GitHub Actions)
+
+Pipeline modular:
+
+1. **CI** → tests en cada push.
+2. **Release** → `semantic-release` (solo en `main`).
+3. **Build** → imagen Docker a GHCR (`:beta`, `:rc`, `:latest`, `:vX.Y.Z`, `:sha-<7>`).
+4. **Deploy** → Render vía Deploy Hook.
+
+### Secrets en GitHub
+
+Se configuran por entorno en _Settings → Environments_:
+
+- `RENDER_DEPLOY_HOOK` (URL completa de Render con `?key=...`).
+
+Ejemplo de uso en job de deploy:
+
+```yaml
+- name: Trigger deploy (Render)
+  run: |
+    curl -fsSL -X POST "$RENDER_DEPLOY_HOOK"
+  env:
+    RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+```
+
+---
+
+## Desarrollo local
+
+Instalación y migraciones:
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+npm ci
+npx prisma generate
+npx prisma migrate dev
+npm run start:dev
 ```
 
-## Support
+Usando Docker local:
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+```bash
+docker build -t personal-trainer-api .
+docker run --rm -p 3000:3000 --env-file .env personal-trainer-api
+```
 
-## Stay in touch
+---
 
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+## Notas
 
-## License
+- **No** ejecutes migraciones en `main.ts`.
+- **Sí** en Render Pre-Deploy.
+- Usa **commits convencionales** (`feat:`, `fix:`, `chore:`…) para versionado automático.
+- Usuario **no root** en contenedor.
+- Secrets gestionados siempre en GitHub/Render (no en código).
 
-Nest is [MIT licensed](LICENSE).
+---

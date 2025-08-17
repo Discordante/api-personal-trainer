@@ -1,0 +1,42 @@
+name: pipeline
+
+on:
+  push:
+    branches: [develop, staging, main]
+
+permissions:
+  contents: write
+  packages: write
+  id-token: write
+
+concurrency:
+  group: pipeline-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    uses: ./.github/workflows/reusable-ci.yml
+
+  release:
+    needs: ci
+    uses: ./.github/workflows/reusable-release.yml
+    secrets: inherit
+
+  build:
+    needs: release
+    uses: ./.github/workflows/reusable-build.yml
+    with:
+      registry: ghcr.io
+      image_name: ${{ github.repository }}
+      channel_branch: ${{ github.ref_name }}
+      version: ${{ needs.release.outputs.version }}
+    secrets: inherit
+
+  deploy:
+    needs: build
+    uses: ./.github/workflows/reusable-deploy-render.yml
+    with:
+      branch: ${{ github.ref_name }}
+      released: ${{ needs.release.outputs.released }}
+      environment_name: ${{ github.ref_name == 'main' && 'production' || github.ref_name == 'staging' && 'staging' || 'development' }}
+    secrets: inherit

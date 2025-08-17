@@ -1,0 +1,43 @@
+name: reusable-deploy-render
+on:
+  workflow_call:
+    inputs:
+      branch:
+        required: true
+        type: string
+      released:
+        required: true
+        type: string # 'true' | 'false'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Decide if should deploy
+        id: gate
+        shell: bash
+        run: |
+          BR="${{ inputs.branch }}"
+          REL="${{ inputs.released }}"
+          if [ "$BR" = "develop" ] || { [ "$BR" = "main" ] && [ "$REL" = "true" ]; }; then
+            echo "go=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "go=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Skip if not eligible
+        if: ${{ steps.gate.outputs.go != 'true' }}
+        run: |
+          echo "Skip deploy: branch=${{ inputs.branch }}, released=${{ inputs.released }}"
+          exit 0
+
+      - name: Trigger Render deploy
+        env:
+          # Provided by caller job via `environment: development`
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+        run: |
+          for i in 1 2 3; do
+            curl -fsSL -X POST "$RENDER_DEPLOY_HOOK" && exit 0
+            echo "Retry $i..." && sleep 5
+          done
+          echo "Failed to trigger Render deploy" && exit 1
