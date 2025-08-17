@@ -1,3 +1,10 @@
+# [1.0.0-beta.3](https://github.com/Discordante/api-personal-trainer/compare/v1.0.0-beta.2...v1.0.0-beta.3) (2025-08-17)
+
+
+### Features
+
+* **config:** add prisma, migrations and update ci-cd ([8ad46bf](https://github.com/Discordante/api-personal-trainer/commit/8ad46bfc5d02f18509adb1c443d269ee65c16adb))
+
 # [1.0.0-beta.2](https://github.com/Discordante/api-personal-trainer/compare/v1.0.0-beta.1...v1.0.0-beta.2) (2025-08-17)
 
 
