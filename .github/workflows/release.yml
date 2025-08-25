@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       REGISTRY: ghcr.io
-      IMAGE_NAME: ${{ github.repository }} # e.g. Discordante/api-personal-trainer
+      IMAGE_NAME: ${{ github.repository }} # e.g. Discordante/alticume
     steps:
       - name: Checkout
         uses: actions/checkout@v4
