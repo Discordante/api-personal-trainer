@@ -1,3 +1,10 @@
+# [1.0.0-rc.2](https://github.com/Discordante/api-personal-trainer/compare/v1.0.0-rc.1...v1.0.0-rc.2) (2025-08-25)
+
+
+### Features
+
+* **update code:** test ([99f2afc](https://github.com/Discordante/api-personal-trainer/commit/99f2afc9a2a0eb7035cef160c187f7971d0ffe5e))
+
 # 1.0.0-rc.1 (2025-08-17)
 
 
